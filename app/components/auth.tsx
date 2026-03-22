@@ -43,6 +43,10 @@ export function AuthPage() {
     if (getClientConfig()?.isApp) {
       navigate(Path.Settings);
     }
+    // 已授权 → 直接进入聊天，跳过登录页
+    if (accessStore.isAuthorized()) {
+      navigate(Path.Chat, { replace: true });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

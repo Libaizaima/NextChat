@@ -21,6 +21,7 @@ import {
   Route,
   Routes,
   useLocation,
+  Navigate,
 } from "react-router-dom";
 import { SideBar } from "./sidebar";
 import { useAppConfig } from "../store/config";
@@ -160,6 +161,7 @@ export function WindowContent(props: { children: React.ReactNode }) {
 function Screen() {
   const config = useAppConfig();
   const location = useLocation();
+  const accessStore = useAccessStore();
   const isArtifact = location.pathname.includes(Path.Artifacts);
   const isHome = location.pathname === Path.Home;
   const isAuth = location.pathname === Path.Auth;
@@ -181,6 +183,19 @@ function Screen() {
       </Routes>
     );
   }
+  // 未授权且不在登录页 → 自动跳转到登录页
+  if (!isAuth && !isArtifact && !accessStore.isAuthorized()) {
+    return (
+      <div
+        className={clsx(styles.container, {
+          [styles["tight-container"]]: shouldTightBorder,
+        })}
+      >
+        <Navigate to={Path.Auth} replace />
+      </div>
+    );
+  }
+
   const renderContent = () => {
     if (isAuth) return <AuthPage />;
     if (isSd) return <Sd />;
