@@ -64,6 +64,7 @@ const DEFAULT_AI302_URL = isApp ? AI302_BASE_URL : ApiPath["302.AI"];
 
 const DEFAULT_ACCESS_STATE = {
   accessCode: "",
+  codeVerified: false,
   useCustomConfig: false,
 
   provider: ServiceProvider.OpenAI,
@@ -246,7 +247,7 @@ export const useAccessStore = createPersistStore(
         this.isValidChatGLM() ||
         this.isValidSiliconFlow() ||
         !this.enabledAccessControl() ||
-        (this.enabledAccessControl() && ensure(get(), ["accessCode"]))
+        (this.enabledAccessControl() && get().codeVerified)
       );
     },
     fetch() {

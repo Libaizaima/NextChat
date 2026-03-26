@@ -48,6 +48,7 @@ export function AuthPage() {
       const data = await res.json();
 
       if (data.valid) {
+        accessStore.update((access) => (access.codeVerified = true));
         navigate(Path.Chat);
       } else {
         showToast(data.message || "访问密码错误");
