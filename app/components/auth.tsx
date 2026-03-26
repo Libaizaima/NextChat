@@ -1,6 +1,6 @@
 import styles from "./auth.module.scss";
 import { IconButton } from "./button";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Path } from "../constant";
 import { useAccessStore } from "../store";
@@ -10,12 +10,12 @@ import { getClientConfig } from "../config/client";
 import { PasswordInput } from "./ui-lib";
 import LeftIcon from "@/app/icons/left.svg";
 import clsx from "clsx";
+import { showToast } from "./ui-lib";
 
 export function AuthPage() {
   const navigate = useNavigate();
   const accessStore = useAccessStore();
-  const goHome = () => navigate(Path.Home);
-  const goChat = () => navigate(Path.Chat);
+  const [verifying, setVerifying] = useState(false);
 
   const resetAccessCode = () => {
     accessStore.update((access) => {
@@ -23,6 +23,42 @@ export function AuthPage() {
       access.accessCode = "";
     });
   }; // Reset access code to empty string
+
+  const handleConfirm = async () => {
+    const code = accessStore.accessCode?.trim();
+
+    // If user provided their own API key (and it's allowed), skip code verification
+    if (!accessStore.hideUserApiKey && accessStore.openaiApiKey) {
+      navigate(Path.Chat);
+      return;
+    }
+
+    if (!code) {
+      showToast("请输入访问密码");
+      return;
+    }
+
+    setVerifying(true);
+    try {
+      const res = await fetch("/api/verify-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accessCode: code }),
+      });
+      const data = await res.json();
+
+      if (data.valid) {
+        navigate(Path.Chat);
+      } else {
+        showToast(data.message || "访问密码错误");
+      }
+    } catch (e) {
+      showToast("验证失败，请检查网络连接");
+      console.error("[Auth] verify code failed:", e);
+    } finally {
+      setVerifying(false);
+    }
+  };
 
   useEffect(() => {
     if (getClientConfig()?.isApp) {
@@ -99,13 +135,12 @@ export function AuthPage() {
 
       <div className={styles["auth-actions"]}>
         <IconButton
-          text={Locale.Auth.Confirm}
+          text={verifying ? "验证中..." : Locale.Auth.Confirm}
           type="primary"
-          onClick={goChat}
+          onClick={handleConfirm}
+          disabled={verifying}
         />
       </div>
     </div>
   );
 }
-
-
